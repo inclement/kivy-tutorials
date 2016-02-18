@@ -873,6 +873,8 @@ user draw things.
 Full code
 ~~~~~~~~~
 
+main.py::
+
     from kivy.app import App
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.slider import Slider
@@ -905,3 +907,7 @@ Full code
             return root_widget
 
     DrawingApp().run()
+
+
+6) kv language
+--------------
