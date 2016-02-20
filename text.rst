@@ -676,11 +676,12 @@ your_filename.py::
 **Central themes:** Canvas instructions
 
 The next couple of tutorials will move to a new application in order
-to showcase some more of Kivy's core components. In this tutorials,
+to showcase some more of Kivy's core components. In this tutorial
 we'll cover *canvas instructions*, Kivy's low level drawing API which
-is always available. In the next, we'll introduce *kv language*, and
-show how it interacts with Python code to easily produce guis without
-so much Python boilerplate.
+is always available. In the next two, we'll add touch/mouse
+interaction to let you click to draw stuff, and then introduce *kv
+language*, and show how it interacts with Python code to easily
+produce guis without so much Python boilerplate.
 
 To showcase Kivy's drawing API, our next app will be a simple drawing
 application. We'll be making a widget gui to select a few different options
@@ -783,7 +784,7 @@ rotation).
 
 .. note:: As with several other things mentioned so far, canvas
           instructions have their own simple syntax for drawing in kv
-          language, introduced in the next tutorial.
+          language, introduced in tutorial 7.
 
 .. note:: You can also access :code:`self.canvas.before` and
           :code:`self.canvas.after`; everything in the former is drawn
@@ -864,11 +865,10 @@ including the notion of automatically updating them in response to gui
 changes, thanks to event binding. This is an important building block
 for building complex applications.
 
-In the next tutorial we'll introduce the *kv markup language*, and
-show how the code so far can be more clearly expressed by using this
-instead of Python for the construction of the gui. This will make it
-easier to add more widgets, and from there we can move to letting the
-user draw things.
+In the next tutorial we'll introduce mouse/touch input handling, so
+that we can finally draw something dynamicall in response to user
+input.
+
 
 Full code
 ~~~~~~~~~
@@ -909,5 +909,213 @@ main.py::
     DrawingApp().run()
 
 
-6) kv language
---------------
+6) Let's draw something
+-----------------------
+
+**Central themes:** Handling touch or mouse input, more canvas instructions
+
+In this tutorial we'll directly add touch handling to the basic code
+developed in tutorial 5, starting with the code from last time::
+
+  
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+                Color(1, 0, 0, 1)  # note that we must reset the colour
+                Rectangle(size=(300, 100),
+                          pos=(300, 200))
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = DrawingWidget()
+            return root_widget
+
+    DrawingApp().run()
+
+We've already seen some input interaction via the Button widget, where
+we could bind to its :code:`on_press` event to have a function called
+whenever the Button was clicked. This is great for a Button, but is
+not a general way to handle interaction - it gives no indication of
+the position of the touch, or any other information like the button
+clicked on the mouse.
+
+Kivy achieves general mouse/touch handling via the
+:code:`on_touch_down`, :code:`on_touch_move` and :code:`on_touch_up`
+methods of all Widget classes. Let's dive in with an example,
+modifying our DrawingWidget::
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+                self.rect_colour = Color(1, 0, 0, 1)  # note that we must reset the colour
+                Rectangle(size=(300, 100),
+                          pos=(300, 200))
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+        def on_touch_down(self, touch):
+            self.rect_colour.rgb = (random(), random(), random())
+            print('touch pos is {}'.format(touch.pos))
+            
+Note that the only changes are to set :code:`self.rect_colour`, and to
+add the :code:`on_touch_down` method. Run the code now, and whenever
+you click the screen you should see the colour of the rectangle change.
+
+How does this work? The answer is that whenever a mouse click or touch
+is registered, the root widget's :code:`on_touch_down` method is
+called, with a :code:`touch` object holding information about the
+touch: you can see this here, where we access the :code:`pos` of this
+object to get the pixel coordinates of its position. Each widget
+passes this touch object to all its children. For this reason, it's
+important to call :code:`super(...)` if you want the touch to also be
+passed to the current Widget's children, though as it happens that's
+not actually important here.
+
+Note that although these methods are called :code:`on_touch_...`, and
+I've called the argument :code:`touch`, they relate to both mouse and
+touch handling; these events are handled in exactly the same way,
+except that the touch object may contain different information such as
+the button clicked (in the case of the mouse). I'll switch to mostly
+referring to this input as 'touch', but this always includes mouse
+interaction too.
+
+The other methods I mentioned, :code:`on_touch_move` and
+:code:`on_touch_up`, work the same way; they are called whenever that
+thing happens, though only when :code:`on_touch_down` has already
+happened, you don't get events when moving the mouse without having
+clicked. We can use this to achieve drawing. 
+
+First, change the kivy.graphics import to include :code:`Line`::
+
+    from kivy.graphics import Rectangle, Color, Line
+    
+Then, add modify :code:`on_touch_down` and :code:`on_touch_move` to
+draw and update a Line each time::
+
+    def on_touch_down(self, touch):
+        super(DrawingWidget, self).on_touch_down(touch)
+
+        with self.canvas:
+            Color(random(), random(), random())
+            self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+    def on_touch_move(self, touch):
+        self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+  
+Run the code again, and try clicking and dragging...you should see a
+line! Each time you click and drag the line has a different colour, as
+we add a new random Color instruction before its instruction each
+time. We're updating it by adding the x and y value of the touch
+position to the Line's points, every time the touch is moved.
+
+.. image:: app with lines
+           
+You can also note that we only use :code:`with self.canvas` when the
+Line is instantiated - not when it is updated. This is because we only
+need to add the Line canvas instruction to the canvas once, after that
+the gui will automatically be updated whenever the Line changes,
+including if we modified e.g. its width. Try changing
+:code:`self.line.width` in :code:`on_touch_move` and see what happens.
+      
+.. note:: This way of storing the line (in :code:`self.line`) isn't
+          very robust if there are multiple simultaneous interactions,
+          e.g. in a multitouch display. This is easy to resolve by
+          storing the reference more cleverly, including in the touch
+          object itself, but I've just ignored the issue here.
+
+You could continue here by experimenting with other actions in
+response to touches, such as drawing different things (e.g. a
+Rectangle at the touch position rather than a Line) or doing more
+complex modifications to existing instructions.
+
+With the basic drawing apparatus set up, the next tutorial will
+introduce the *kv markup language*, showing how a gui can easily be
+constructed without some of the Python boilerplate that comes from
+using a general purpose language for creating a gui. 
+
+
+Full code
+~~~~~~~~~
+
+main.py::
+
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color, Line
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+                self.rect_colour = Color(1, 0, 0, 1)  # note that we must reset the colour
+                Rectangle(size=(300, 100),
+                          pos=(300, 200))
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+        def on_touch_down(self, touch):
+            super(DrawingWidget, self).on_touch_down(touch)
+
+            with self.canvas:
+                Color(random(), random(), random())
+                self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+        def on_touch_move(self, touch):
+            self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = DrawingWidget()
+            return root_widget
+
+    DrawingApp().run()
