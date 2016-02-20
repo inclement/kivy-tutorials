@@ -1119,3 +1119,183 @@ main.py::
             return root_widget
 
     DrawingApp().run()
+
+    
+7) Introducing kv language
+--------------------------
+
+**Central themes:** kv language, building a gui, integration with Python
+
+The goal of this tutorial will be to build up a simple gui around the
+DrawingWidget built in the last two tutorials. A nice simple goal
+would be to let the user select the colour of the lines. Kivy actually
+has a ColorPicker Widget for this purpose (see the `documentation
+<https://kivy.org/docs/api-kivy.uix.colorpicker.html>`__), but we'll
+skip that for now in order to continue demonstrating Kivy widget
+construction.
+
+.. note:: Since all Kivy widgets are built out of other Widgets and
+          canvas instructions, you might like to think about how you'd
+          build the ColorPicker from scratch.
+          
+Let's start with the code from last time, minus the now-unnecessary
+red Rectangle::
+
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color, Line
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+        def on_touch_down(self, touch):
+            super(DrawingWidget, self).on_touch_down(touch)
+
+            with self.canvas:
+                Color(random(), random(), random())
+                self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+        def on_touch_move(self, touch):
+            self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = DrawingWidget()
+            return root_widget
+
+    DrawingApp().run()
+
+I'll demonstrate adding the new gui components in two ways; first in 
+pure Python as has been demonstrated in previous tutorials, and second
+using kv language instead. So, here's a Python implementation of the
+new features we want, beginning with importing the Widget classes
+we'll need::
+
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.label import Label
+    from kivy.uix.slider import Slider
+    
+Slider is a previously-unseen Widget displaying a draggable marker. We'll be using a
+Slider for each primary colour (red, blue, green), and using this to
+set the Color when a Line is drawn.
+
+We can now update the build method of DrawingApp, replacing the root
+widget and adding the new gui components::
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = BoxLayout(orientation='vertical')
+
+            drawing_widget = DrawingWidget()
+
+            red_slider = Slider(min=0, max=1, value=0.5,
+                                size_hint_y=None, height=80)
+            green_slider = Slider(min=0, max=1, value=0.5,
+                                size_hint_y=None, height=80)
+            blue_slider = Slider(min=0, max=1, value=0.5,
+                                size_hint_y=None, height=80)
+
+            colour_row = BoxLayout(orientation='horizontal',
+                                   size_hint_y=None, height=80)
+            colour_label = Label(text='output colour:')
+            colour_widget = Widget()
+
+            # We draw a Rectangle on colour_widget exactly the same way as
+            # with DrawingWidget, just without making a new class
+            with colour_widget.canvas:
+                output_colour = Color(red_slider.value,
+                                      green_slider.value,
+                                      blue_slider.value)
+                output_rectangle = Rectangle()
+            def update_colour_widget_rect(instance, value):
+                output_rectangle.pos = colour_widget.pos
+                output_rectangle.size = colour_widget.size
+            colour_widget.bind(pos=update_colour_widget_rect,
+                               size=update_colour_widget_rect)
+
+            def update_colour_widget_colour(instance, value):
+                output_colour.rgb = (red_slider.value,
+                                     green_slider.value,
+                                     blue_slider.value)
+            red_slider.bind(value=update_colour_widget_colour)
+            green_slider.bind(value=update_colour_widget_colour)
+            blue_slider.bind(value=update_colour_widget_colour)
+
+            root_widget.add_widget(drawing_widget)
+            root_widget.add_widget(red_slider)
+            root_widget.add_widget(green_slider)
+            root_widget.add_widget(blue_slider)
+            root_widget.add_widget(colour_row)
+
+            colour_row.add_widget(colour_label)
+            colour_row.add_widget(colour_widget)
+
+            return root_widget
+            
+This is a lot of code to drop all at once, but read it carefully and
+you'll see that it's only the same concepts already introduced: we
+instantiate Widgets, add them to one another, and create bindings so
+that things automatically happen when Kivy properties are changed. In
+this case, we make use of the :code:`value` Kivy property of the
+Slider widget, which gives its current value (changing automatically
+when the slider is moved).
+
+Run the code and you should see something like the image below. You
+can update the colour in the bottom right by moving the sliders. Cool.
+
+.. image:: code with sliders
+           
+A problem now becoming obvious is that all this code is kind of
+verbose, and also it can be a little unclear what is happening -
+Widget instantiation is in a different place to where the Widgets are
+added to one another, which is different again to where their events
+are bound. You can mitigate this with a careful app structure and
+following whatever coding conventions you like, but some of it is
+unavoidable given how Python works.
+
+It's for this reason that Kivy comes with *kv language*, a simple but
+powerful language specifically designed for creating Kivy widget
+trees. If learning a new language sounds worrying...don't be
+concerned! Kv doesn't have much special syntax and is targeted
+specifically at Kivy widgets, and much of the code you write is
+actually normal Python (we'll see that soon).
+
+All of the kv language stuff discussed below is `documented on the
+Kivy website <https://kivy.org/docs/guide/lang.html>`__; I'll cover
+the basics, but you can find more information there.
+
+To use kv language, you should first create a file named
+``drawing.kv`` to contain the kv code. This name comes from the name
+of the App class, minus the App at the end if present, and in
+lowercase (e.g. if you named your App :code:`MySuperKivyApp` you'd
+need to name the file ``mysuperkivy.kv``). This is only necessary if
+you want the file to be automatically loaded, you can also `load files
+or string manually
+<https://kivy.org/docs/guide/lang.html#how-to-load-kv>`__.
+
+kv language works by writing *rules* for Widget classes, which will be
+automatically applied every time you instantiate one. We can use kv
+for almost everything added to the app so far, but this time we'll
+construct the gui step by step to see how each part is added with the
+new kv syntax.
