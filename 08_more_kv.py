@@ -13,20 +13,6 @@ from kivy.graphics import Rectangle, Color, Line
 from random import random
 
 class DrawingWidget(Widget):
-    # def __init__(self):
-    #     super(DrawingWidget, self).__init__()
-
-    #     with self.canvas:
-    #         Color(1, 1, 1, 1)
-    #         self.rect = Rectangle(size=self.size,
-    #                               pos=self.pos)
-    #     self.bind(pos=self.update_rectangle,
-    #               size=self.update_rectangle)
-
-    # def update_rectangle(self, instance, value):
-    #     self.rect.pos = self.pos
-    #     self.rect.size = self.size
-        
     def on_touch_down(self, touch):
         super(DrawingWidget, self).on_touch_down(touch)
 

@@ -1285,17 +1285,533 @@ All of the kv language stuff discussed below is `documented on the
 Kivy website <https://kivy.org/docs/guide/lang.html>`__; I'll cover
 the basics, but you can find more information there.
 
-To use kv language, you should first create a file named
-``drawing.kv`` to contain the kv code. This name comes from the name
-of the App class, minus the App at the end if present, and in
-lowercase (e.g. if you named your App :code:`MySuperKivyApp` you'd
-need to name the file ``mysuperkivy.kv``). This is only necessary if
-you want the file to be automatically loaded, you can also `load files
-or string manually
-<https://kivy.org/docs/guide/lang.html#how-to-load-kv>`__.
+First, get rid of *all* the Python code from above, and replace the
+root widget return with the following::
+
+    class Interface(BoxLayout):
+        pass
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = Interface()
+            return root_widget
 
 kv language works by writing *rules* for Widget classes, which will be
 automatically applied every time you instantiate one. We can use kv
 for almost everything added to the app so far, but this time we'll
 construct the gui step by step to see how each part is added with the
-new kv syntax.
+new kv syntax. We'll be writing a kv rule for the new
+:code:`Interface` class.
+
+To start using kv language, write the following code in a file named
+``drawing.kv``. This name comes from the name
+of the App class, minus the App at the end if present, and in
+lowercase (e.g. if you named your App :code:`MySuperKivyApp` you'd
+need to name the file ``mysuperkivy.kv``). This is only necessary if
+you want the file to be automatically loaded, you can also `load files
+or string manually
+<https://kivy.org/docs/guide/lang.html#how-to-load-kv>`__. Our first
+kv code is::
+
+    <Interface>:
+        orientation: 'vertical'
+        Label:
+            text: 'label added with kv'
+            font_size: 50
+
+Run the code again, and you should see the a Label with the given
+text, as the kv file is automatically loaded and its
+:code:`<Interface>` rule applied.
+      
+.. image:: example of label added with kv
+     
+This demonstrates the core rules of kv syntax. A *kv rule* is created
+with the :code:`<WidgetName>:` syntax. You can make a rule for *any*
+widget, including built in ones (Kivy internally has a `large kv file
+<https://github.com/kivy/kivy/blob/master/kivy/data/style.kv>`__), and
+if you make multiple rules for the same Widget then all of them are
+applied one by one.
+
+Below the rule creation, we indent by 4 spaces and define values for
+Kivy properties of the widget, and add child widgets. Lines like
+:code:`orientation: 'vertical'` set Kivy properties just like we did
+previously in the Python code. Note that everything to the right of
+the colon is *normal Python code* - that doesn't matter here, but for
+instance we could equally well write :code:`orientation: ''.join(['v',
+'e', 'r', 't', 'i', 'c', 'a', 'l'])` and it would be exactly the
+same. You can set any Kivy property of a widget in this way, finding
+the available options in the documentation as previously discussed.
+
+We can also add child widgets by writing the widget name with a colon,
+then indenting by a further 4 spaces, as is done here with the
+:code:`Label`. After this you can keep going as deep as you like,
+setting properties or adding more child widgets.
+
+We can use these pieces of syntax to construct the previous Python
+interface entirely in kv::
+
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+  
+This hasn't yet set up the event binding, but the full widget tree has
+been constructed entirely using the kv syntax described above. The
+immediate advantage of this is that kv language directly expresses the
+widget tree - there are no longer separate steps for instantiating
+Widgets, setting their properties and adding them to one
+another. Instead, you get to see everything at once.
+
+This gui doesn't yet have the behaviour of the Python one (i.e. having
+the sliders control output colour), but in the interest of keeping
+these tutorials relatively short, I'll stop here for now. In the next
+tutorial will see how kv language also makes event binding very easy.
+  
+
+Full code
+~~~~~~~~~
+
+main.py::
+
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.label import Label
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color, Line
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+        def on_touch_down(self, touch):
+            super(DrawingWidget, self).on_touch_down(touch)
+
+            if not self.collide_point(*touch.pos):
+                return
+
+            with self.canvas:
+                Color(random(), random(), random())
+                self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+        def on_touch_move(self, touch):
+            if not self.collide_point(*touch.pos):
+                return
+
+            self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+
+
+    class Interface(BoxLayout):
+        pass
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = Interface()
+            return root_widget
+
+    DrawingApp().run()
+
+drawing.kv::
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+            
+
+8) More kv language
+-------------------
+
+**Central themes:** Event binding and canvas instructions in kv
+language
+
+This tutorial directly follows on from the previous, so start by
+retrieving the previous code, as below:
+
+main.py::
+
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.label import Label
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color, Line
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def __init__(self):
+            super(DrawingWidget, self).__init__()
+
+            with self.canvas:
+                Color(1, 1, 1, 1)
+                self.rect = Rectangle(size=self.size,
+                                      pos=self.pos)
+            self.bind(pos=self.update_rectangle,
+                      size=self.update_rectangle)
+
+        def update_rectangle(self, instance, value):
+            self.rect.pos = self.pos
+            self.rect.size = self.size
+
+        def on_touch_down(self, touch):
+            super(DrawingWidget, self).on_touch_down(touch)
+
+            if not self.collide_point(*touch.pos):
+                return
+
+            with self.canvas:
+                Color(random(), random(), random())
+                self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+        def on_touch_move(self, touch):
+            if not self.collide_point(*touch.pos):
+                return
+
+            self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+
+
+    class Interface(BoxLayout):
+        pass
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = Interface()
+            return root_widget
+
+    DrawingApp().run()
+
+drawing.kv::
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+
+
+The first thing to do is draw the coloured Rectangle that the final
+Widget uses to display an output colour, and for this we need to know
+how to draw canvas instructions in kv language. The syntax is as below::
+
+        Widget:
+            canvas:
+                Color:
+                    rgb: 0, 1, 0  # using a fixed colour for now
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+                    
+Run the code, and you'll see another of kv language's most important
+features; *automatic event binding*. In the original Python code of
+tutorial 7 we needed an extra :code:`.bind(...)` call to make the
+be updated to always be placed within its Widget. In kv language this
+is not necessary, the dependency on :code:`self.size` and
+:code:`self.pos` is automatically detected, and a binding
+automatically created!
+
+This is also the generic syntax for canvas instructions; first add
+:code:`canvas:` (or :code:`canvas.before` or :code:`canvas.after`),
+then, indent by 4 spaces, and add canvas instructions much like you
+would Widgets. However, note that canvas instructions are *not*
+widgets.
+
+The only thing now missing from the original Python interface
+implementation in tutorial 7 is having the Sliders automatically
+update the output colour rectangle. Change the :code:`<Interface>:`
+rule to the following::
+
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        Slider:
+            id: red_slider
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            id: green_slider
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        Slider:
+            id: blue_slider
+            min: 0
+            max: 1
+            value: 0.5
+            size_hint_y: None
+            height: 80
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+                canvas:
+                    Color:
+                        rgb: red_slider.value, green_slider.value, blue_slider.value
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+
+There are actually only two changes here; we gave each Slider an
+:code:`id: ` declaration, and in the canvas Color referred to the
+sliders with this name. Giving a widget an id is just like naming it
+in Python so that you can refer to it elsewhere.
+
+Thanks to kv's automatic binding, this is all we need to do to have
+the Color update automatically whenever a slider value changes. Run
+the code, and you should see that things work exactly as they did in
+the original Python interface.
+
+We can finish this tutorial with a couple of extra kv
+conveniences. First, just as we added an automatically updating
+Rectangle in the Widget kv, we can do the same for the background of
+the DrawingWidget. Delete the :code:`__init__` and
+:code:`update_rectangle` methods in the Python DrawingWidget code, and
+add a new rule in the kv file::
+
+    <DrawingWidget>:
+        canvas:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+Second, you might have noticed that there's a lot of code duplication
+in each of the Slider rules - we set the same :code:`min`,
+:code:`max`, initial :code:`value`, :code:`size_hint_y`and
+:code:`height` for every one. As is normal in Python, it would be
+natural to abstract this in a new class, so as to set each value only
+once. You can probably already see how to do this with what we've
+learned so far (make a new :code:`class YourSlider(Slider):` in the
+Python and add a new :code:`<YourSlider>:` rule in the kv), but I'll
+note that you can even do this entirely in kv::
+
+    <ColourSlider@Slider>:
+        min: 0
+        max: 1
+        value: 0.5
+        size_hint_y: None
+        height: 80
+
+
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        ColourSlider:
+            id: red_slider
+        ColourSlider:
+            id: green_slider
+        ColourSlider:
+            id: blue_slider
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+                canvas:
+                    Color:
+                        rgb: red_slider.value, green_slider.value, blue_slider.value
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                        
+The new :code:`<ColourSlider@Slider>:` rule defines a *dynamic class*,
+a Python class kv rule without a corresponding Python code
+definition. This is convenient if you want to do something repeatedly
+only in kv, and never access it from Python.
+
+At this point, we've reached feature parity with the original Python
+code, and seen all the basics of kv language. In the next tutorial
+we'll finish off the original purpose of all these sliders; letting
+the user set the colour of line that is drawn by the DrawingWidget.
+
+Full code
+~~~~~~~~~
+
+main.py::
+
+    from kivy.app import App
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.label import Label
+    from kivy.uix.slider import Slider
+
+    from kivy.uix.widget import Widget
+    from kivy.graphics import Rectangle, Color, Line
+
+    from random import random
+
+    class DrawingWidget(Widget):
+        def on_touch_down(self, touch):
+            super(DrawingWidget, self).on_touch_down(touch)
+
+            if not self.collide_point(*touch.pos):
+                return
+
+            with self.canvas:
+                Color(random(), random(), random())
+                self.line = Line(points=[touch.pos[0], touch.pos[1]], width=2)
+
+        def on_touch_move(self, touch):
+            if not self.collide_point(*touch.pos):
+                return
+
+            self.line.points = self.line.points + [touch.pos[0], touch.pos[1]]
+
+
+    class Interface(BoxLayout):
+        pass
+
+    class DrawingApp(App):
+
+        def build(self):
+            root_widget = Interface()
+            return root_widget
+
+    DrawingApp().run()
+
+drawing.kv::
+
+    <DrawingWidget>:
+        canvas:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    <ColourSlider@Slider>:
+        min: 0
+        max: 1
+        value: 0.5
+        size_hint_y: None
+        height: 80
+
+
+    <Interface>:
+        orientation: 'vertical'
+        DrawingWidget:
+        ColourSlider:
+            id: red_slider
+        ColourSlider:
+            id: green_slider
+        ColourSlider:
+            id: blue_slider
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 80
+            Label:
+                text: 'output colour:'
+            Widget:
+                canvas:
+                    Color:
+                        rgb: red_slider.value, green_slider.value, blue_slider.value
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
