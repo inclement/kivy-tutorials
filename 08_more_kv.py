@@ -13,6 +13,7 @@ from kivy.graphics import Rectangle, Color, Line
 from random import random
 
 class DrawingWidget(Widget):
+        
     def on_touch_down(self, touch):
         super(DrawingWidget, self).on_touch_down(touch)
 

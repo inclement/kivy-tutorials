@@ -1,5 +1,4 @@
-
-Kivy Intro
+Kivy intro
 ==========
 
 A series of short tutorials intended as an introduction to Kivy.
@@ -86,6 +85,12 @@ You should see a Window something like the following
 image. Congratulations, you've written and run your first Kivy
 application.
 
+.. figure:: images/01_01.png
+   :alt: Hello world application
+   :align: center
+   :width: 250px
+
+
 Full code
 ~~~~~~~~~
 
@@ -144,7 +149,9 @@ find an appropriate Kivy property. For the text size, check the `Label
 doc <https://kivy.org/docs/api-kivy.uix.label.html>`__ and find the
 :code:`font_size` listing. It looks something like the following:
   
-.. image:: font size
+.. image:: images/02_font_size.png
+   :alt: Font size doc from Kivy website
+   :align: center
            
 Following the documentation, this lets us set the font size in pixels,
 and it defaults to ``'15sp'``. This is a special Kivy syntax, the sp
@@ -197,7 +204,10 @@ modify the text within the Label. Try the following::
 Now run the application again, :code:`python your_filename.py`. The
 result should now look something like the following image.
 
-.. image:: 2 result
+.. image:: images/02_output.png
+   :alt: Output for example app.
+   :align: center
+   :width: 400px
            
 .. note:: This is just a basic introduction to customising Kivy
           widgets, you can use similar methods to accomplish many
@@ -309,7 +319,10 @@ This code should give you something like the following image. You can
 also now click the buttons to see their colour change; this behaviour
 is automatic, they don't do anything else yet.
 
-  .. image:: two buttons
+  .. image:: images/03_two_buttons.png
+     :alt: App output showing 2 buttons
+     :align: center
+     :width: 400px
 
 Try setting the BoxLayout orientation to :code:`'horizontal'` to see
 how it affects the result.
@@ -386,7 +399,10 @@ Your final code should look something like the image below. You can
 resize the window to see all the components move around and resize
 automatically, thanks to the use of Layouts for positioning.
 
-.. image:: calculator gui
+.. image:: images/03_output.png
+   :alt: Calculator gui image
+   :align: center
+   :width: 400
 
 You are *strongly encouraged* to experiment with modifying this code
 to see what happens. All the concepts used here are standard when
@@ -549,7 +565,10 @@ achieve that::
 Run the code again. Now when you press the buttons, you should see the
 text appear at the top of the screen, as in the screenshot below:
 
-.. image:: button updated
+.. image:: images/04_example_text.png
+   :alt: Calculator text after number input
+   :align: center
+   :width: 400px
            
          
 At this point, a new problem presents itself; the font size of the
@@ -600,7 +619,10 @@ Every button now does something, either adding its symbol to the
 output label, evaluating the label's text as python code, or clearing
 the result. You should be seeing something like the image below:
 
-.. image:: calculator final
+.. image:: images/04_output.png
+   :alt: Output for calculator app with number input
+   :align: center
+   :width: 400px
 
 These core event binding concepts are central to working with Kivy
 widgets, and come up in many different ways. Don't worry if you don't
@@ -755,7 +777,10 @@ pixels will be 300 right and 200 up from the bottom left of the
 screen; Kivy's coordinate system follows OpenGL in having its
 coordinate origin there.
 
-.. image:: example rectangle
+.. image:: images/05_rectangle.png
+   :alt: Rectangle in example app
+   :align: center
+   :width: 400px
 
 This is the basic way of doing any kind of drawing, and with a
 combination of canvas instructions (also called graphics instructions)
@@ -858,7 +883,10 @@ possible because :code:`pos` and :code:`size` are Kivy properties,
 which you can also bind to (the function is called when their value
 changes). When run, your app should now look like the following:
 
-.. image:: white background, red rectangle
+.. image:: images/05_output.png
+   :alt: Rectangle in example app
+   :align: center
+   :width: 400px
 
 This tutorial has introduced the basic use of *canvas instructions*,
 including the notion of automatically updating them in response to gui
@@ -1042,7 +1070,10 @@ we add a new random Color instruction before its instruction each
 time. We're updating it by adding the x and y value of the touch
 position to the Line's points, every time the touch is moved.
 
-.. image:: app with lines
+.. image:: images/06_lines.png
+   :alt: Lines drawn in example app
+   :align: center
+   :width: 400px
            
 You can also note that we only use :code:`with self.canvas` when the
 Line is instantiated - not when it is updated. This is because we only
@@ -1264,7 +1295,10 @@ when the slider is moved).
 Run the code and you should see something like the image below. You
 can update the colour in the bottom right by moving the sliders. Cool.
 
-.. image:: code with sliders
+.. image:: images/07_slider_colours.png
+   :alt: Sliders bound to a colour change
+   :align: center
+   :width: 400px
            
 A problem now becoming obvious is that all this code is kind of
 verbose, and also it can be a little unclear what is happening -
@@ -1324,7 +1358,10 @@ Run the code again, and you should see the a Label with the given
 text, as the kv file is automatically loaded and its
 :code:`<Interface>` rule applied.
       
-.. image:: example of label added with kv
+.. image:: images/08_kv_rule.png
+   :alt: Label added with kv rule.
+   :align: center
+   :width: 400px
      
 This demonstrates the core rules of kv syntax. A *kv rule* is created
 with the :code:`<WidgetName>:` syntax. You can make a rule for *any*
@@ -1455,6 +1492,7 @@ main.py::
     DrawingApp().run()
 
 drawing.kv::
+
     <Interface>:
         orientation: 'vertical'
         DrawingWidget:
@@ -1553,6 +1591,7 @@ main.py::
     DrawingApp().run()
 
 drawing.kv::
+
     <Interface>:
         orientation: 'vertical'
         DrawingWidget:
@@ -1653,7 +1692,7 @@ rule to the following::
                         pos: self.pos
 
 There are actually only two changes here; we gave each Slider an
-:code:`id: ` declaration, and in the canvas Color referred to the
+:code:`id` declaration, and in the canvas Color referred to the
 sliders with this name. Giving a widget an id is just like naming it
 in Python so that you can refer to it elsewhere.
 
@@ -1815,3 +1854,8 @@ drawing.kv::
                     Rectangle:
                         size: self.size
                         pos: self.pos
+
+                        
+9) Changing the drawing colour
+------------------------------
+

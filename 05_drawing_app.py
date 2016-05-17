@@ -12,6 +12,7 @@ class DrawingWidget(Widget):
 
         with self.canvas:
             Color(1, 1, 1, 1)
+            Color(0, 0, 0, 1)
             self.rect = Rectangle(size=self.size,
                                   pos=self.pos)
             Color(1, 0, 0, 1)  # note that we must reset the colour
